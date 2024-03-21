@@ -1,0 +1,1 @@
+# Registry Scanning Auto Scaling Group
