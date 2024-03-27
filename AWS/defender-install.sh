@@ -11,14 +11,17 @@ sudo systemctl enable docker
 sudo systemctl start docker
 
 # Update hostname
-[[ -z "${NEW_HOSTNAME}" ]] && NEW_HOSTNAME="${NEW_HOSTNAME}" 
+[[ -z "${NEW_HOSTNAME}" ]] && NEW_HOSTNAME="${NEW_HOSTNAME}"
 sudo hostnamectl set-hostname ${NEW_HOSTNAME}
 
-# Variables
-ACCESS_KEY=$(aws secretsmanager get-secret-value --secret-id PrismaCloud-APP --query SecretString --output text --region us-east-2 | grep -Po '"'"PrismaAccessKey"'"\s*:\s*"\K([^"]*)')
-SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id PrismaCloud-APP --query SecretString --output text --region us-east-2 | grep -Po '"'"PrismaSecretKey"'"\s*:\s*"\K([^"]*)')
-CONSOLE_ADDRESS=$(aws secretsmanager get-secret-value --secret-id PrismaCloud-APP --query SecretString --output text --region us-east-2 | grep -Po '"'"PrismaConsoleAddress"'"\s*:\s*"\K([^"]*)')
-CONSOLE_SAN=$(aws secretsmanager get-secret-value --secret-id PrismaCloud-APP --query SecretString --output text --region us-east-2 | grep -Po '"'"PrismaConsoleSAN"'"\s*:\s*"\K([^"]*)')
+# Secret Variables
+[[ -z "${SECRET_ID}" ]] && SECRET_ID="${SECRET_ID}"
+[[ -z "${SECRET_REGION}" ]] && SECRET_REGION="${SECRET_REGION}"
+
+ACCESS_KEY=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaAccessKey"'"\s*:\s*"\K([^"]*)')
+SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaSecretKey"'"\s*:\s*"\K([^"]*)')
+CONSOLE_ADDRESS=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaConsoleAddress"'"\s*:\s*"\K([^"]*)')
+CONSOLE_SAN=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaConsoleSAN"'"\s*:\s*"\K([^"]*)')
 
 # Get token
 token=$(curl -s -k ${CONSOLE_ADDRESS}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
@@ -38,5 +41,3 @@ cat defender.sh | sudo bash -s -- -c "$CONSOLE_CN" -v -m -u
 # Clear data
 rm defender.sh
 history -c
-
-

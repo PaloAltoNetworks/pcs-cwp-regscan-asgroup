@@ -12,13 +12,28 @@ variable "ami_name" {
   default = "registry-scanner"
 }
 
-variable "new_hostname" {
+variable "hostname" {
+  type    = string
+  default = "registry-scanner"
+}
+
+variable "secret_id" {
+  type    = string
+  default = "PrismaCloudCompute"
+}
+
+variable "secret_region" {
+  type    = string
+  default = "us-east-1"
+}
+
+variable "console_version" {
   type = string
-  default = registry-scanner 
 }
 
 variable "ec2_role" {
-  type = string
+  type    = string
+  default = "PrismaCloudComputeAccess"
 }
 
 locals {
@@ -26,9 +41,10 @@ locals {
 }
 
 source "amazon-ebs" "amazon_linux_2023" {
-  ami_name      = "${var.ami_name}-${local.timestamp}"
-  instance_type = "t2.small"
-  region        = "us-east-2"
+  ami_name        = "${var.ami_name}-${var.console_version}-${local.timestamp}"
+  ami_description = "AMI with Prisma Cloud Defender version ${var.console_version}"
+  instance_type   = "t2.small"
+  region          = "us-east-2"
   source_ami_filter {
     filters = {
       name                = "al2023-ami-2023.*-x86_64"
@@ -57,7 +73,11 @@ build {
   ]
 
   provisioner "shell" {
-    script           = "defender-install.sh"
-    environment_vars = ["NEW_HOSTNAME=${var.new_hostname}"]
+    script = "defender-install.sh"
+    environment_vars = [
+      "NEW_HOSTNAME=${var.hostname}",
+      "SECRET_ID=${var.secret_id}",
+      "SECRET_REGION=${var.secret_region}"
+    ]
   }
 }
