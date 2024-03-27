@@ -65,5 +65,10 @@ then
     fi
 
 else
-    aws secretsmanager update-secret --secret-id $secret_id --region $secret_region --secret-string '{"PrismaAccessKey":"'"$access_key"'","PrismaSecretKey":"'"$secret_key"'","PrismaConsoleAddress":"'"$compute_api_endpoint"'","PrismaConsoleSAN":"'"$console_name"'"}' > /dev/null
+    aws secretsmanager update-secret --secret-id $secret_id --region $secret_region --secret-string '{
+        "PrismaAccessKey":"'"$access_key"'",
+        "PrismaSecretKey":"'"$secret_key"'",
+        "PrismaConsoleAddress":"'"$compute_api_endpoint"'",
+        "PrismaConsoleSAN":"'"$console_name"'"
+    }' > /dev/null
 fi
