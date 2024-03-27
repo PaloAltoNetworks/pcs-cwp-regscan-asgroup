@@ -7,6 +7,14 @@ module "vpc" {
   azs                     = slice(data.aws_availability_zones.azs.names, 0, length(var.public_subnets))
   public_subnets          = var.public_subnets
   map_public_ip_on_launch = true
+
+  tags = {
+    Name = var.vpc_name
+  }
+
+  public_subnet_tags = {
+    VPC = var.vpc_name
+  }
 }
 
 resource "aws_security_group" "registry-scanner-sg" {
@@ -23,6 +31,7 @@ resource "aws_security_group" "registry-scanner-sg" {
 
   tags = {
     Name = var.security_group_name
+    VPC  = var.vpc_name
   }
 }
 

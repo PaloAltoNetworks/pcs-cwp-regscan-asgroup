@@ -23,6 +23,10 @@ resource "aws_launch_template" "registry-scanner-lt" {
     http_tokens = "required"
   }
 
+  tags = {
+    Name = var.launch_template_name
+  }
+
 }
 
 resource "aws_autoscaling_group" "registry-scanner-ag" {
