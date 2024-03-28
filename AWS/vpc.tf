@@ -9,11 +9,11 @@ module "vpc" {
   map_public_ip_on_launch = true
 
   tags = {
-    Name = var.vpc_name
+    use = "registryScanning"
   }
 
-  public_subnet_tags = {
-    VPC = var.vpc_name
+  vpc_tags = {
+    Name    = var.vpc_name
   }
 }
 
@@ -31,7 +31,7 @@ resource "aws_security_group" "registry-scanner-sg" {
 
   tags = {
     Name = var.security_group_name
-    VPC  = var.vpc_name
+    use  = "registryScanning"
   }
 }
 

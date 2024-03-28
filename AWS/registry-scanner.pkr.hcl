@@ -64,6 +64,10 @@ source "amazon-ebs" "amazon_linux_2023" {
 
   ssh_username         = "ec2-user"
   iam_instance_profile = "${var.ec2_role}"
+
+  tags = {
+    use = "registryScanning"
+  }
 }
 
 build {

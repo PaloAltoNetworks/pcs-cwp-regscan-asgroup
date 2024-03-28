@@ -25,6 +25,7 @@ resource "aws_launch_template" "registry-scanner-lt" {
 
   tags = {
     Name = var.launch_template_name
+    use  = "registryScanning"
   }
 
 }
@@ -54,6 +55,12 @@ resource "aws_autoscaling_group" "registry-scanner-ag" {
         weighted_capacity = "1"
       }
     }
+  }
+
+  tag {
+    key                 = "use"
+    value               = "registryScanning"
+    propagate_at_launch = true
   }
 }
 
