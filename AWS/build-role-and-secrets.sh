@@ -5,12 +5,12 @@ policy_name="PrismaCloudComputeAccessPolicy"
 role_name="PrismaCloudComputeAccess"
 
 # Variables
-while getopts A:S:E:N:s:r:p:R flag
+while getopts A:S:a:N:s:r:p:R flag
 do
     case "${flag}" in
         A) access_key=${OPTARG};;
         S) secret_key=${OPTARG};;
-        E) compute_api_endpoint=${OPTARG};;
+        a) console_address=${OPTARG};;
         N) console_name=${OPTARG};;
         s) secret_id=${OPTARG};;
         r) secret_region=${OPTARG};;
@@ -22,7 +22,7 @@ done
 secret_arn=$(aws secretsmanager create-secret --name $secret_id --region $secret_region --secret-string '{
         "PrismaAccessKey":"'"$access_key"'",
         "PrismaSecretKey":"'"$secret_key"'",
-        "PrismaConsoleAddress":"'"$compute_api_endpoint"'",
+        "PrismaConsoleAddress":"'"$console_address"'",
         "PrismaConsoleSAN":"'"$console_name"'"
     }' | grep -Po '"'"ARN"'"\s*:\s*"\K([^"]*)')
 
@@ -69,7 +69,7 @@ else
     aws secretsmanager update-secret --secret-id $secret_id --region $secret_region --secret-string '{
         "PrismaAccessKey":"'"$access_key"'",
         "PrismaSecretKey":"'"$secret_key"'",
-        "PrismaConsoleAddress":"'"$compute_api_endpoint"'",
+        "PrismaConsoleAddress":"'"$console_address"'",
         "PrismaConsoleSAN":"'"$console_name"'"
     }' > /dev/null
 
