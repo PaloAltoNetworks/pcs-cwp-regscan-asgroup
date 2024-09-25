@@ -11,32 +11,16 @@ sudo systemctl enable docker
 sudo systemctl start docker
 
 # Update hostname
-[[ -z "${NEW_HOSTNAME}" ]] && NEW_HOSTNAME="${NEW_HOSTNAME}"
 sudo hostnamectl set-hostname ${NEW_HOSTNAME}
 
-# Secret Variables
-[[ -z "${SECRET_ID}" ]] && SECRET_ID="${SECRET_ID}"
-[[ -z "${SECRET_REGION}" ]] && SECRET_REGION="${SECRET_REGION}"
-
-ACCESS_KEY=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaAccessKey"'"\s*:\s*"\K([^"]*)')
-SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaSecretKey"'"\s*:\s*"\K([^"]*)')
-CONSOLE_ADDRESS=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaConsoleAddress"'"\s*:\s*"\K([^"]*)')
-CONSOLE_SAN=$(aws secretsmanager get-secret-value --secret-id ${SECRET_ID} --query SecretString --output text --region ${SECRET_REGION} | grep -Po '"'"PrismaConsoleSAN"'"\s*:\s*"\K([^"]*)')
-
-# Get token
-token=$(curl -s -k ${CONSOLE_ADDRESS}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
-  "username":"'"$ACCESS_KEY"'",
-  "password":"'"$SECRET_KEY"'"
-  }'  | grep -Po '"'"token"'"\s*:\s*"\K([^"]*)')
-
 # Download installation script
-curl -sSL -O --header "authorization: Bearer $token" -X POST ${CONSOLE_ADDRESS}/api/v1/scripts/defender.sh
+curl -sSL -O --header "authorization: Bearer $TOKEN" -X POST ${PCC_URL}/api/v1/scripts/defender.sh
 
 # Remove Memory limitation
 sed -i '/${defender_envvars}/ased -i -e "s/-m 512m //g" twistlock.sh' defender.sh
 
 # Install defender
-cat defender.sh | sudo bash -s -- -c "$CONSOLE_CN" -v -m -u
+cat defender.sh | sudo bash -s -- -c "$PCC_SAN" -v -m -u
 
 # Clear data
 rm defender.sh

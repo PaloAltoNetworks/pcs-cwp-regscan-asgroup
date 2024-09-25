@@ -8,14 +8,7 @@ variable "secret_id" {
 variable "secret_region" {
   type        = string
   default     = "us-east-1"
-  description = "Region where the Secret is stored"
-  sensitive   = true
-}
-
-variable "ec2_role" {
-  type        = string
-  default     = "PrismaCloudComputeAccess"
-  description = "Name of the Role to be attached to the EC2 instance"
+  description = "Region where the Secret is located"
   sensitive   = true
 }
 

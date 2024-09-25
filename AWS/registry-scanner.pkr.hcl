@@ -17,12 +17,7 @@ variable "hostname" {
   default = "registry-scanner"
 }
 
-variable "secret_id" {
-  type    = string
-  default = "PrismaCloudCompute"
-}
-
-variable "secret_region" {
+variable "region" {
   type    = string
   default = "us-east-1"
 }
@@ -31,9 +26,20 @@ variable "console_version" {
   type = string
 }
 
-variable "ec2_role" {
+variable "token" {
   type    = string
-  default = "PrismaCloudComputeAccess"
+}
+
+variable "pcc_url" {
+  type    = string
+}
+
+variable "pcc_san" {
+  type    = string
+}
+
+variable "subnet_id" {
+  type    = string
 }
 
 locals {
@@ -44,7 +50,7 @@ source "amazon-ebs" "amazon_linux_2023" {
   ami_name        = "${var.ami_name}-${var.console_version}-${local.timestamp}"
   ami_description = "AMI with Prisma Cloud Defender version ${var.console_version}"
   instance_type   = "t2.small"
-  region          = "us-east-2"
+  region          = "${var.region}"
   source_ami_filter {
     filters = {
       name                = "al2023-ami-2023.*-x86_64"
@@ -55,6 +61,8 @@ source "amazon-ebs" "amazon_linux_2023" {
     owners      = ["amazon"]
   }
 
+  subnet_id = "${var.subnet_id}"
+
   launch_block_device_mappings {
     device_name           = "/dev/xvda"
     volume_type           = "gp3"
@@ -63,7 +71,6 @@ source "amazon-ebs" "amazon_linux_2023" {
   }
 
   ssh_username         = "ec2-user"
-  iam_instance_profile = "${var.ec2_role}"
 
   tags = {
     use = "registryScanning"
@@ -75,13 +82,14 @@ build {
   sources = [
     "source.amazon-ebs.amazon_linux_2023"
   ]
-
+  
   provisioner "shell" {
     script = "defender-install.sh"
     environment_vars = [
       "NEW_HOSTNAME=${var.hostname}",
-      "SECRET_ID=${var.secret_id}",
-      "SECRET_REGION=${var.secret_region}"
+      "TOKEN=${var.token}",
+      "PCC_URL=${var.pcc_url}",
+      "PCC_SAN=${var.pcc_san}"
     ]
   }
 }

@@ -1,12 +1,14 @@
-resource "null_resource" "create_ami" {
-  triggers = {
-    "always_run" = "${timestamp()}"
-  }
+resource "terraform_data" "create_ami" {
+  triggers_replace = [
+    "${timestamp()}"
+  ]
 
   provisioner "local-exec" {
     #Create Secret if not exists
-    command = "bash generate-ami.sh -s ${var.secret_id} -r ${var.secret_region} -a ${var.ami_name} -h ${var.hostname} -R ${var.ec2_role}"
+    command = "bash generate-ami.sh -s ${var.secret_id} -R ${var.secret_region} -r ${data.aws_region.current.id} -a ${var.ami_name} -h ${var.hostname} -S ${module.vpc.public_subnets[0]}"
   }
+
+  depends_on = [ module.vpc ]
 }
 
 resource "aws_launch_template" "registry-scanner-lt" {

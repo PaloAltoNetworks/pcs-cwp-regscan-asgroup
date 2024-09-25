@@ -1,29 +1,55 @@
 #!/bin/bash
-# Get current Prisma Cloud Compute Console version
 
 # Secret Variables
-while getopts s:r:a:h:R: flag
+while getopts s:r:a:h:R:S: flag
 do
     case "${flag}" in
         s) secret_id=${OPTARG};;
-        r) secret_region=${OPTARG};;
+        R) secret_region=${OPTARG};;
+        r) region=${OPTARG};;
         a) ami_name=${OPTARG};;
         h) new_hostname=${OPTARG};;
-        R) ec2_role=${OPTARG};;
+        S) subnet_id=${OPTARG};;
     esac
 done
 
-ACCESS_KEY=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PrismaAccessKey"'"\s*:\s*"\K([^"]*)')
-SECRET_KEY=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PrismaSecretKey"'"\s*:\s*"\K([^"]*)')
-CONSOLE_ADDRESS=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PrismaConsoleAddress"'"\s*:\s*"\K([^"]*)')
+[[ -z $region ]] && region=$AWS_REGION
+[[ -z $secret_region ]] && secret_region=$region
 
-token=$(curl -s -k ${CONSOLE_ADDRESS}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
-  "username":"'"$ACCESS_KEY"'",
-  "password":"'"$SECRET_KEY"'"
-  }'  | grep -Po '"'"token"'"\s*:\s*"\K([^"]*)')
 
-version=$(curl -s -k ${CONSOLE_ADDRESS}/api/v1/version -H "Authorization: Bearer $token" | tr -d '"' | sed "s/\./_/g")
+# Get current Prisma Cloud Compute Console version
+PCC_USER=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PCC_USER"'"\s*:\s*"\K([^"]*)')
+PCC_PASS=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PCC_PASS"'"\s*:\s*"\K([^"]*)')
+PCC_URL=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PCC_URL"'"\s*:\s*"\K([^"]*)')
+PCC_SAN=$(aws secretsmanager get-secret-value --secret-id ${secret_id} --query SecretString --output text --region ${secret_region} | grep -Po '"'"PCC_SAN"'"\s*:\s*"\K([^"]*)')
 
+token=$(curl -s -k ${PCC_URL}/api/v1/authenticate -X POST -H "Content-Type: application/json" -d '{
+  "username":"'"$PCC_USER"'",
+  "password":"'"$PCC_PASS"'"
+  }' | grep -Po '"'"token"'"\s*:\s*"\K([^"]*)')
+
+version=$(curl -s -k ${PCC_URL}/api/v1/version -H "Authorization: Bearer $token" | tr -d '"' | sed "s/\./_/g")
+
+# Build the AMI
 packer init registry-scanner.pkr.hcl
-packer validate -var "ami_name=${ami_name}" -var "secret_id=${secret_id}" -var "secret_region=${secret_region}" -var "console_version=${version}" -var "hostname=${new_hostname}" -var "ec2_role=${ec2_role}" registry-scanner.pkr.hcl
-packer build -var "ami_name=${ami_name}" -var "secret_id=${secret_id}" -var "secret_region=${secret_region}" -var "console_version=${version}" -var "hostname=${new_hostname}" -var "ec2_role=${ec2_role}" registry-scanner.pkr.hcl
+packer validate \
+  -var "ami_name=${ami_name}" \
+  -var "region=${region}" \
+  -var "console_version=${version}" \
+  -var "hostname=${new_hostname}" \
+  -var "token=${token}" \
+  -var "pcc_url=${PCC_URL}" \
+  -var "pcc_san=${PCC_SAN}" \
+  -var "subnet_id=${subnet_id}" \
+  registry-scanner.pkr.hcl
+
+packer build \
+  -var "ami_name=${ami_name}" \
+  -var "region=${region}" \
+  -var "console_version=${version}" \
+  -var "hostname=${new_hostname}" \
+  -var "token=${token}" \
+  -var "pcc_url=${PCC_URL}" \
+  -var "pcc_san=${PCC_SAN}" \
+  -var "subnet_id=${subnet_id}" \
+  registry-scanner.pkr.hcl
